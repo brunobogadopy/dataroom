@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentHistoryController;
 use App\Http\Controllers\Api\FileController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\LibraryController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\NodeController;
 use App\Http\Controllers\Api\NodePermissionController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\TrashController;
 use App\Http\Controllers\Api\WorkspaceController;
@@ -47,6 +49,15 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/workspaces/{workspace:slug}/trash',[LibraryController::class,'trash']);
         Route::get('/workspaces/{workspace:slug}/activity',[LibraryController::class,'activity']);
         Route::post('/nodes/{node}/favorite',[LibraryController::class,'toggleFavorite']);
+
+        Route::get('/nodes/{node}/comments',[CommentController::class,'index']);
+        Route::post('/nodes/{node}/comments',[CommentController::class,'store']);
+        Route::delete('/comments/{comment}',[CommentController::class,'destroy']);
+
+        Route::get('/notifications',[NotificationController::class,'index']);
+        Route::get('/notifications/unread-count',[NotificationController::class,'unreadCount']);
+        Route::post('/notifications/{notification}/read',[NotificationController::class,'markRead']);
+        Route::post('/notifications/read-all',[NotificationController::class,'markAllRead']);
 
         Route::get('/documents/{node}',[DocumentController::class,'show']);
         Route::put('/documents/{node}',[DocumentController::class,'update']);

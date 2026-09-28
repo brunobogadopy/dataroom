@@ -33,7 +33,7 @@ export default function Library({params}:{params:Promise<{workspace:string}>}){
   async function erase(id:string){if(confirm('Permanently delete this item? This cannot be undone.')){await api(`/trash/${id}`,{method:'DELETE'});load()}}
 
   return <div className="grid">
-    <aside className="sidebar stack"><h2>Dataroom</h2><Link href={`/w/${workspace}/browse`}>Browse</Link><b>Library</b><Link href={`/w/${workspace}/search`}>Search</Link><Link href={`/w/${workspace}/settings`}>Settings</Link></aside>
+    <aside className="sidebar stack"><h2>Dataroom</h2><Link href={`/w/${workspace}/browse`}>Browse</Link><b>Library</b><Link href="/notifications">Notifications</Link><Link href={`/w/${workspace}/search`}>Search</Link><Link href={`/w/${workspace}/settings`}>Settings</Link></aside>
     <main className="main">
       <div className="topbar"><div><h1>Library</h1><p className="muted">Your shortcuts, history and recovery tools.</p></div></div>
       <div className="tabs">{(['favorites','recent','trash','activity'] as const).map(t=><button className={tab===t?'tab active':'tab'} key={t} onClick={()=>setTab(t)}>{t[0].toUpperCase()+t.slice(1)}</button>)}</div>
