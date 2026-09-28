@@ -38,7 +38,7 @@ export default function Browse({params}:{params:Promise<{workspace:string}>}){
   async function trash(id:string){if(!confirm('Move this item to trash?'))return;await api(`/nodes/${id}`,{method:'DELETE'});load()}
 
   return <div className="grid">
-    <aside className="sidebar stack"><h2>Dataroom</h2><b>Browse</b><Link href={`/w/${workspace}/library`}>Library</Link><Link href="/notifications">Notifications</Link><Link href={`/w/${workspace}/search`}>Search</Link><Link href={`/w/${workspace}/settings`}>Settings</Link></aside>
+    <aside className="sidebar stack"><h2>Dataroom</h2><b>Browse</b><Link href={`/w/${workspace}/library`}>Library</Link><Link href="/notifications">Notifications</Link><Link href={`/w/${workspace}/ask`}>Ask Dataroom</Link><Link href={`/w/${workspace}/search`}>Search</Link><Link href={`/w/${workspace}/settings`}>Settings</Link></aside>
     <main className="main">
       <div className="breadcrumbs"><button className="crumb" onClick={()=>router.push(`/w/${workspace}/browse`)}>Company knowledge</button>{crumbs.map(c=><span className="row" key={c.id}><span className="muted">/</span><button className="crumb" onClick={()=>router.push(`/w/${workspace}/browse?folder=${c.id}`)}>{c.name}</button></span>)}</div>
       <div className="topbar"><div><h1>{crumbs.at(-1)?.name??'Company knowledge'}</h1><p className="muted">{ws?.name} · {ws?.my_role}</p></div>{canWrite&&<div className="row"><input ref={input} type="file" hidden onChange={e=>{const f=e.target.files?.[0];if(f)send(f)}}/><button className="btn secondary" onClick={()=>input.current?.click()}>↑ Upload</button><button className="btn" onClick={doc}>+ Document</button></div>}</div>

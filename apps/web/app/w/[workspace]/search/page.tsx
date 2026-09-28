@@ -27,6 +27,7 @@ export default function Search({params}:{params:Promise<{workspace:string}>}){
     <aside className="sidebar stack">
       <h2>Dataroom</h2>
       <Link href={`/w/${workspace}/browse`}>Browse</Link>
+      <Link href={`/w/${workspace}/ask`}>Ask Dataroom</Link>
       <b>Search</b>
     </aside>
     <main className="main">

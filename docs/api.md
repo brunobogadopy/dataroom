@@ -11,19 +11,34 @@ All workspace routes below require `Authorization: Bearer <token>`.
 - `file` required
 - `parent_id` optional folder UUID
 
-The endpoint checks workspace membership and quota, uploads bytes to bunny.net Storage and returns a unified `file` node. Text extraction is asynchronous.
-
 ### File metadata
 `GET /api/v1/files/{nodeId}`
-
-Returns the file node, current version, MIME type, size and extraction status.
 
 ### Download
 `GET /api/v1/files/{nodeId}/download`
 
-Authenticated API-proxied download.
-
 ## Search
+
+### Lexical search
 `GET /api/v1/workspaces/{workspaceSlug}/search?q=vacation`
 
-Searches folder/file names plus document text and extracted file text. Uses Meilisearch when its workspace filter is configured and healthy; otherwise safely falls back to PostgreSQL.
+Uses Meilisearch with a PostgreSQL fallback and permission filters.
+
+### Semantic search
+`GET /api/v1/workspaces/{workspaceSlug}/semantic-search?q=enterprise+refunds`
+
+Returns permission-filtered semantic chunks ranked by cosine similarity from pgvector.
+
+### Ask Dataroom
+`POST /api/v1/workspaces/{workspaceSlug}/ask`
+
+JSON:
+```json
+{"question":"What does our refund policy say about enterprise customers?"}
+```
+
+Returns:
+- `answer` — grounded generated answer with inline `[S1]` citations
+- `sources` — node IDs, names, snippets and semantic scores for each cited context candidate
+
+Only chunks from nodes the requesting user can currently view are sent to the generation provider.

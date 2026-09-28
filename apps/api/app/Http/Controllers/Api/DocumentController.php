@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\IndexNodeEmbeddings;
 use App\Models\Document;
 use App\Models\DocumentRevision;
 use App\Models\Node;
@@ -27,7 +28,9 @@ class DocumentController extends Controller
             Document::create(['node_id'=>$node->id,'content_json'=>$data['content_json']??['type'=>'doc','content'=>[]],'plain_text'=>$data['plain_text']??'','status'=>'draft','owner_user_id'=>$request->user()->id,'version'=>1]);
             return $node->load('document');
         });
-        $index->indexNode($created);$activity->log($workspace,$request->user(),'document.created',$created);
+        $index->indexNode($created);
+        IndexNodeEmbeddings::dispatch($created->id);
+        $activity->log($workspace,$request->user(),'document.created',$created);
         return response()->json($created,201);
     }
 
@@ -53,6 +56,7 @@ class DocumentController extends Controller
         });
 
         $fresh=$node->fresh()->load('document');$fresh->setAttribute('can_edit',true);$index->indexNode($fresh);
+        if($contentChanged)IndexNodeEmbeddings::dispatch($fresh->id);
         if($contentChanged)$activity->log($node->workspace,$request->user(),'document.edited',$fresh,['version'=>$fresh->document->version]);
         elseif($titleChanged)$activity->log($node->workspace,$request->user(),'node.renamed',$fresh);
         return $fresh;
