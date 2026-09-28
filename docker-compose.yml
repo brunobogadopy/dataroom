@@ -1,10 +1,10 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     environment:
-      POSTGRES_DB: atlas
-      POSTGRES_USER: atlas
-      POSTGRES_PASSWORD: atlas
+      POSTGRES_DB: dataroom
+      POSTGRES_USER: dataroom
+      POSTGRES_PASSWORD: dataroom
     ports: ["5432:5432"]
     volumes: ["postgres_data:/var/lib/postgresql/data"]
 
@@ -13,7 +13,7 @@ services:
     ports: ["6379:6379"]
 
   meilisearch:
-    image: getmeili/meilisearch:v1.11
+    image: getmeili/meilisearch:v1.15
     environment:
       MEILI_NO_ANALYTICS: "true"
       MEILI_MASTER_KEY: local-dev-key
@@ -24,14 +24,34 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: atlas
-      MINIO_ROOT_PASSWORD: atlas-local-secret
+      MINIO_ROOT_USER: dataroom
+      MINIO_ROOT_PASSWORD: dataroom-local-secret
     ports: ["9000:9000", "9001:9001"]
     volumes: ["minio_data:/data"]
 
-  mailpit:
-    image: axllent/mailpit:latest
-    ports: ["1025:1025", "8025:8025"]
+  api:
+    build: ./apps/api
+    env_file: ./apps/api/.env.example
+    environment:
+      APP_KEY: base64:LOCAL_DEVELOPMENT_REPLACE_ME_32_BYTES_KEY=
+    ports: ["8080:8080"]
+    depends_on: [postgres, redis]
+
+  worker:
+    build: ./apps/api
+    env_file: ./apps/api/.env.example
+    environment:
+      APP_KEY: base64:LOCAL_DEVELOPMENT_REPLACE_ME_32_BYTES_KEY=
+    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--timeout=90"]
+    depends_on: [postgres, redis]
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+    ports: ["3000:3000"]
+    depends_on: [api]
 
 volumes:
   postgres_data:

@@ -1,0 +1,3 @@
+export const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1';
+export function token(){if(typeof window==='undefined')return null;return localStorage.getItem('dataroom_token')}
+export async function api<T>(path:string, init:RequestInit={}):Promise<T>{const headers=new Headers(init.headers);headers.set('Content-Type','application/json');const t=token();if(t)headers.set('Authorization',`Bearer ${t}`);const r=await fetch(`${API}${path}`,{...init,headers});if(!r.ok){const body=await r.text();throw new Error(body||`HTTP ${r.status}`)}if(r.status===204)return undefined as T;return r.json()}
