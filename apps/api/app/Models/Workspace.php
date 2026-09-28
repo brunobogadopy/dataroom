@@ -11,10 +11,7 @@ class Workspace extends Model
 
     protected $fillable = ['name', 'slug', 'owner_user_id', 'storage_quota_bytes'];
 
-    public function nodes()
-    {
-        return $this->hasMany(Node::class);
-    }
+    public function nodes() { return $this->hasMany(Node::class); }
 
     public function members()
     {
@@ -22,4 +19,6 @@ class Workspace extends Model
             ->withPivot('role')
             ->withTimestamps();
     }
+
+    public function invitations() { return $this->hasMany(WorkspaceInvitation::class); }
 }

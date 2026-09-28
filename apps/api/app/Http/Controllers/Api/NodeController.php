@@ -5,78 +5,42 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Node;
 use App\Models\Workspace;
+use App\Services\NodeAccess;
 use App\Services\SearchIndex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class NodeController extends Controller
 {
-    private function assertMember(Request $request, Workspace $workspace): void
+    public function index(Request $request, Workspace $workspace, NodeAccess $access)
     {
-        abort_unless($workspace->members()->whereKey($request->user()->id)->exists(), 403);
+        abort_unless($access->isMember($request->user(), $workspace), 403);
+        $parentId=$request->query('parent_id'); $parent=null;
+        if($parentId){$parent=$workspace->nodes()->whereKey($parentId)->where('type','folder')->firstOrFail();abort_unless($access->canView($request->user(),$parent),403);}
+        return $workspace->nodes()->where('parent_id',$parentId)->with(['file.currentVersion'])->orderByRaw("case type when 'folder' then 0 when 'document' then 1 else 2 end")->orderBy('name')->get()->filter(fn($n)=>$access->canView($request->user(),$n))->values();
     }
 
-    public function index(Request $request, Workspace $workspace)
+    public function breadcrumbs(Request $request, Workspace $workspace, Node $node, NodeAccess $access)
     {
-        $this->assertMember($request, $workspace);
-        $parentId = $request->query('parent_id');
-
-        if ($parentId) {
-            abort_unless($workspace->nodes()->whereKey($parentId)->where('type', 'folder')->exists(), 404);
-        }
-
-        return $workspace->nodes()
-            ->where('parent_id', $parentId)
-            ->with(['file.currentVersion'])
-            ->orderByRaw("case type when 'folder' then 0 when 'document' then 1 else 2 end")
-            ->orderBy('name')
-            ->get();
-    }
-
-    public function breadcrumbs(Request $request, Workspace $workspace, Node $node)
-    {
-        $this->assertMember($request, $workspace);
-        abort_unless($node->workspace_id === $workspace->id && $node->type === 'folder', 404);
-
-        $crumbs = collect();
-        $current = $node;
-
-        while ($current) {
-            $crumbs->prepend([
-                'id' => $current->id,
-                'name' => $current->name,
-            ]);
-            $current = $current->parent;
-        }
-
+        abort_unless($node->workspace_id===$workspace->id && $node->type==='folder',404);
+        abort_unless($access->canView($request->user(),$node),403);
+        $crumbs=collect();$current=$node;
+        while($current){$crumbs->prepend(['id'=>$current->id,'name'=>$current->name]);$current=$current->parent;}
         return $crumbs->values();
     }
 
-    public function storeFolder(Request $request, Workspace $workspace)
+    public function storeFolder(Request $request, Workspace $workspace, NodeAccess $access)
     {
-        $this->assertMember($request, $workspace);
-        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'parent_id' => ['nullable', 'uuid']]);
-
-        if (!empty($data['parent_id'])) {
-            abort_unless($workspace->nodes()->whereKey($data['parent_id'])->where('type', 'folder')->exists(), 422);
-        }
-
-        $node = $workspace->nodes()->create([
-            'parent_id' => $data['parent_id'] ?? null,
-            'type' => 'folder',
-            'name' => $data['name'],
-            'slug' => Str::slug($data['name']).'-'.Str::lower(Str::random(6)),
-            'created_by' => $request->user()->id,
-        ]);
-
-        return response()->json($node, 201);
+        $data=$request->validate(['name'=>['required','string','max:255'],'parent_id'=>['nullable','uuid']]);
+        $parent=!empty($data['parent_id'])?$workspace->nodes()->whereKey($data['parent_id'])->where('type','folder')->firstOrFail():null;
+        abort_unless($access->canCreateIn($request->user(),$workspace,$parent),403);
+        $node=$workspace->nodes()->create(['parent_id'=>$parent?->id,'type'=>'folder','name'=>$data['name'],'slug'=>Str::slug($data['name']).'-'.Str::lower(Str::random(6)),'created_by'=>$request->user()->id]);
+        return response()->json($node,201);
     }
 
-    public function destroy(Request $request, Node $node, SearchIndex $index)
+    public function destroy(Request $request, Node $node, SearchIndex $index, NodeAccess $access)
     {
-        abort_unless($node->workspace->members()->whereKey($request->user()->id)->exists(), 403);
-        $node->delete();
-        $index->deleteNode($node->id);
-        return response()->noContent();
+        abort_unless($access->canEdit($request->user(),$node),403);
+        $node->delete();$index->deleteNode($node->id);return response()->noContent();
     }
 }
