@@ -36,7 +36,7 @@ export default function Browse({params}:{params:Promise<{workspace:string}>}){
       }else{
         setCrumbs([]);
       }
-    }catch(e){setError(String(e))}
+    }catch(e){setError(e instanceof Error?e.message:'Something went wrong.')}
   }
 
   useEffect(()=>{load()},[workspace,folderId]);
@@ -71,7 +71,7 @@ export default function Browse({params}:{params:Promise<{workspace:string}>}){
     try{
       await uploadFile(`/workspaces/${workspace}/files`,file,folderId,setProgress);
       await load();
-    }catch(e){setError(String(e))}
+    }catch(e){setError(e instanceof Error?e.message:'Something went wrong.')}
     finally{
       setProgress(null);
       if(input.current)input.current.value='';

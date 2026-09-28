@@ -17,5 +17,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // API exceptions use Laravel's standard JSON rendering.
+        // Always answer API requests with JSON, even without an Accept header.
+        $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*'));
     })->create();
