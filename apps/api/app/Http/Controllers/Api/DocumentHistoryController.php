@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\IndexNodeEmbeddings;
 use App\Models\DocumentRevision;
 use App\Models\Node;
 use App\Services\ActivityLogger;
@@ -44,7 +45,9 @@ class DocumentHistoryController extends Controller
         ]);
 
         $fresh = $node->fresh()->load('document');
+        $fresh->setAttribute('can_edit',true);
         $index->indexNode($fresh);
+        IndexNodeEmbeddings::dispatch($fresh->id);
         $activity->log($node->workspace, $request->user(), 'document.version_restored', $node, ['from_version' => $revision->version]);
 
         return $fresh;

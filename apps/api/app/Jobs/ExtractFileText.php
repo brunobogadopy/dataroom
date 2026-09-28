@@ -33,7 +33,9 @@ class ExtractFileText implements ShouldQueue
                 'extracted_text' => $text,
                 'extraction_status' => $text === null ? 'unsupported' : 'ready',
             ]);
-            $index->indexNode($version->node->fresh());
+            $node=$version->node->fresh();
+            $index->indexNode($node);
+            IndexNodeEmbeddings::dispatch($node->id);
         } catch (Throwable $e) {
             $version->update(['extraction_status' => 'failed', 'extraction_error' => mb_substr($e->getMessage(), 0, 2000)]);
             throw $e;

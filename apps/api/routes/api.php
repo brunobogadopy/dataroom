@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\DocumentController;
@@ -58,6 +59,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/notifications/unread-count',[NotificationController::class,'unreadCount']);
         Route::post('/notifications/{notification}/read',[NotificationController::class,'markRead']);
         Route::post('/notifications/read-all',[NotificationController::class,'markAllRead']);
+
+        Route::get('/workspaces/{workspace:slug}/semantic-search',[AiController::class,'semanticSearch']);
+        Route::post('/workspaces/{workspace:slug}/ask',[AiController::class,'ask']);
 
         Route::get('/documents/{node}',[DocumentController::class,'show']);
         Route::put('/documents/{node}',[DocumentController::class,'update']);

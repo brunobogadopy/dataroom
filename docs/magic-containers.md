@@ -80,3 +80,30 @@ The database is the authorization source of truth. Do not expose the raw Storage
 
 ## Health check
 API: `/up`
+
+
+## AI / semantic search (v0.7)
+
+Dataroom v0.7 requires PostgreSQL with the pgvector extension. Use a PostgreSQL image/build that includes pgvector.
+
+Server-side environment variables:
+
+```env
+AI_API_KEY=<provider key>
+AI_EMBEDDINGS_URL=<full embeddings endpoint>
+AI_RESPONSES_URL=<full Responses-compatible generation endpoint>
+AI_EMBEDDING_MODEL=<embedding model>
+AI_GENERATION_MODEL=<generation model>
+AI_EMBEDDING_DIMENSIONS=1536
+AI_CHUNK_CHARS=2400
+AI_CHUNK_OVERLAP_CHARS=300
+AI_MAX_SOURCES=8
+```
+
+Never expose these as `NEXT_PUBLIC_*` values. After enabling AI for an existing workspace, run:
+
+```bash
+php artisan dataroom:reindex-ai
+```
+
+The worker generates embeddings asynchronously. Retrieval is filtered through Dataroom node permissions before any source text is sent to the generation provider.
