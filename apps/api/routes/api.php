@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\DocumentHistoryController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\InvitationController;
+use App\Http\Controllers\Api\LibraryController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\NodeController;
 use App\Http\Controllers\Api\NodePermissionController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\TrashController;
 use App\Http\Controllers\Api\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,12 +42,26 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/workspaces/{workspace:slug}/nodes/{node}/permissions',[NodePermissionController::class,'show']);
         Route::put('/workspaces/{workspace:slug}/nodes/{node}/permissions',[NodePermissionController::class,'update']);
 
+        Route::get('/workspaces/{workspace:slug}/favorites',[LibraryController::class,'favorites']);
+        Route::get('/workspaces/{workspace:slug}/recent',[LibraryController::class,'recent']);
+        Route::get('/workspaces/{workspace:slug}/trash',[LibraryController::class,'trash']);
+        Route::get('/workspaces/{workspace:slug}/activity',[LibraryController::class,'activity']);
+        Route::post('/nodes/{node}/favorite',[LibraryController::class,'toggleFavorite']);
+
         Route::get('/documents/{node}',[DocumentController::class,'show']);
         Route::put('/documents/{node}',[DocumentController::class,'update']);
+        Route::get('/documents/{node}/versions',[DocumentHistoryController::class,'index']);
+        Route::post('/documents/{node}/versions/{revision}/restore',[DocumentHistoryController::class,'restore']);
+
         Route::get('/files/{node}',[FileController::class,'show']);
+        Route::post('/files/{node}/versions',[FileController::class,'newVersion']);
+        Route::get('/files/{node}/versions',[FileController::class,'versions']);
         Route::get('/files/{node}/preview',[FileController::class,'preview']);
         Route::get('/files/{node}/download',[FileController::class,'download']);
+
         Route::delete('/nodes/{node}',[NodeController::class,'destroy']);
+        Route::post('/trash/{nodeId}/restore',[TrashController::class,'restore']);
+        Route::delete('/trash/{nodeId}',[TrashController::class,'forceDelete']);
 
         Route::get('/workspaces/{workspace:slug}/search',SearchController::class);
     });

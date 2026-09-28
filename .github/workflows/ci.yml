@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, intl, pcntl, zip
+          coverage: none
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: PHP syntax
+        run: find app routes database config bootstrap public -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Laravel boot check
+        run: php artisan route:list > /dev/null
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Build Next.js
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+        run: npm run build
