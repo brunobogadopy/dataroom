@@ -13,6 +13,7 @@ use App\Services\SearchIndex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Throwable;
 
 class FileController extends Controller
@@ -85,6 +86,7 @@ class FileController extends Controller
 
         $index->indexNode($node);
         ExtractFileText::dispatch($versionId);
+
         return response()->json($node, 201);
     }
 
@@ -93,6 +95,29 @@ class FileController extends Controller
         abort_unless($node->type === 'file', 404);
         abort_unless($node->workspace->members()->whereKey($request->user()->id)->exists(), 403);
         return $node->load('file.currentVersion');
+    }
+
+    public function preview(Request $request, Node $node, BunnyStorage $storage)
+    {
+        abort_unless($node->type === 'file', 404);
+        abort_unless($node->workspace->members()->whereKey($request->user()->id)->exists(), 403);
+        $node->load('file.currentVersion');
+        abort_unless($node->file?->currentVersion, 404);
+
+        $mime = $node->file->currentVersion->mime_type;
+        $allowed = $mime === 'application/pdf'
+            || str_starts_with($mime, 'image/')
+            || str_starts_with($mime, 'text/');
+        abort_unless($allowed, 415, 'Preview is not supported for this file type.');
+
+        $tmp = tempnam(sys_get_temp_dir(), 'dataroom-preview-');
+        abort_unless($tmp, 500);
+        $storage->downloadTo($node->file->currentVersion->object_key, $tmp);
+
+        return response()->file($tmp, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => (new ResponseHeaderBag())->makeDisposition('inline', $node->name),
+        ])->deleteFileAfterSend(true);
     }
 
     public function download(Request $request, Node $node, BunnyStorage $storage)

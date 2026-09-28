@@ -21,15 +21,19 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/workspaces/{workspace:slug}', [WorkspaceController::class, 'show']);
 
         Route::get('/workspaces/{workspace:slug}/nodes', [NodeController::class, 'index']);
+        Route::get('/workspaces/{workspace:slug}/folders/{node}/breadcrumbs', [NodeController::class, 'breadcrumbs']);
         Route::post('/workspaces/{workspace:slug}/folders', [NodeController::class, 'storeFolder']);
         Route::post('/workspaces/{workspace:slug}/documents', [DocumentController::class, 'store']);
         Route::post('/workspaces/{workspace:slug}/files', [FileController::class, 'store']);
+
         Route::get('/documents/{node}', [DocumentController::class, 'show']);
         Route::put('/documents/{node}', [DocumentController::class, 'update']);
-        Route::get('/files/{node}', [FileController::class, 'show']);
-        Route::get('/files/{node}/download', [FileController::class, 'download']);
-        Route::delete('/nodes/{node}', [NodeController::class, 'destroy']);
 
+        Route::get('/files/{node}', [FileController::class, 'show']);
+        Route::get('/files/{node}/preview', [FileController::class, 'preview']);
+        Route::get('/files/{node}/download', [FileController::class, 'download']);
+
+        Route::delete('/nodes/{node}', [NodeController::class, 'destroy']);
         Route::get('/workspaces/{workspace:slug}/search', SearchController::class);
     });
 });
