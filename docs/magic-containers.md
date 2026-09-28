@@ -1,21 +1,20 @@
-# Magic Containers deployment notes
+# Magic Containers deployment — Dataroom v0.2
 
-## Containers
+Use one **Single Region** Magic Containers application initially because PostgreSQL is stateful. Containers within the same application can use the internal networking model provided by Magic Containers; set hostnames according to the values shown in your deployed app.
 
-### web
-Image: `ghcr.io/<owner>/<repo>-web:latest`
+## web
+Image: `ghcr.io/<owner>/<repo>-web:latest`  
 Port: `3000`
-Public hostname: e.g. `app.example.com`
 
-Build-time variable:
-`NEXT_PUBLIC_API_URL=https://api.example.com/api/v1`
+Build variable:
+```env
+NEXT_PUBLIC_API_URL=https://api.example.com/api/v1
+```
 
-### api
-Image: `ghcr.io/<owner>/<repo>-api:latest`
+## api
+Image: `ghcr.io/<owner>/<repo>-api:latest`  
 Port: `8080`
-Public hostname: e.g. `api.example.com`
 
-Required environment:
 ```env
 APP_NAME=Dataroom
 APP_ENV=production
@@ -36,30 +35,48 @@ REDIS_PORT=6379
 CACHE_STORE=redis
 QUEUE_CONNECTION=redis
 
-FILESYSTEM_DISK=s3
-AWS_ACCESS_KEY_ID=<storage key>
-AWS_SECRET_ACCESS_KEY=<storage secret>
-AWS_DEFAULT_REGION=<region>
-AWS_BUCKET=<storage zone/bucket mapping>
-AWS_ENDPOINT=<S3-compatible endpoint>
-AWS_USE_PATH_STYLE_ENDPOINT=false
+MEILISEARCH_HOST=http://<meilisearch-host>:7700
+MEILISEARCH_KEY=<strong master key>
+MEILISEARCH_INDEX=dataroom_nodes
+
+BUNNY_STORAGE_ZONE=<storage zone name>
+BUNNY_STORAGE_ACCESS_KEY=<storage zone password/access key>
+BUNNY_STORAGE_HOSTNAME=storage.bunnycdn.com
+DATAROOM_MAX_UPLOAD_MB=100
 ```
 
-Run database migrations once for each release that contains schema changes:
-`php artisan migrate --force`
+Keep `BUNNY_STORAGE_ACCESS_KEY` only in the API/worker environment. Never expose it as a `NEXT_PUBLIC_*` value.
 
-### worker
-Use the same API image and environment, but override the command:
-`php artisan queue:work --sleep=1 --tries=3 --timeout=90`
+Run migrations on release:
+```bash
+php artisan migrate --force
+```
 
-### postgres
-Use a persistent volume. Start single-region while the application is stateful.
+## worker
+Same API image and environment. Command:
+```bash
+php artisan queue:work --sleep=1 --tries=3 --timeout=300
+```
 
-### redis
-Used for cache and queues. Persistence is optional for the first MVP if jobs can be recreated, but production queue semantics should be reviewed before launch.
+PDF/DOCX extraction happens here, not in the HTTP request.
+
+## postgres
+Attach a persistent volume. Use backups before real customer onboarding.
+
+## redis
+Used for queues/cache. v0.2 assumes a single Redis instance.
+
+## meilisearch
+Attach a persistent volume and use a strong `MEILI_MASTER_KEY`. If Meilisearch is temporarily unavailable, the API falls back to permission-scoped PostgreSQL search.
+
+## bunny.net Storage
+Create one private Storage Zone for Dataroom objects. The API stores objects beneath:
+
+```text
+workspaces/{workspace_uuid}/files/{node_uuid}/{version_uuid}.{ext}
+```
+
+The database is the authorization source of truth. Do not expose the raw Storage Zone URL or key to end users.
 
 ## Health check
-API health endpoint: `/up`
-
-## Files
-Do not store customer uploads on the API container filesystem. The upcoming upload flow will issue direct-to-storage upload instructions and only persist metadata in PostgreSQL.
+API: `/up`

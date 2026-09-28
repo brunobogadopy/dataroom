@@ -1,43 +1,29 @@
 # API v1
 
-Base path: `/api/v1`
-
-## Workspaces
-- `POST /workspaces`
-- `GET /workspaces/{workspace}`
-- `GET /workspaces/{workspace}/members`
-- `POST /workspaces/{workspace}/invitations`
-
-## Nodes
-- `GET /workspaces/{workspace}/nodes?parent_id=`
-- `POST /workspaces/{workspace}/folders`
-- `PATCH /nodes/{node}`
-- `DELETE /nodes/{node}`
-- `POST /nodes/{node}/restore`
-
-## Documents
-- `POST /workspaces/{workspace}/documents`
-- `GET /documents/{node}`
-- `PUT /documents/{node}`
-- `GET /documents/{node}/revisions`
-- `POST /documents/{node}/revisions/{revision}/restore`
+All workspace routes below require `Authorization: Bearer <token>`.
 
 ## Files
-- `POST /workspaces/{workspace}/uploads/presign`
-- `POST /workspaces/{workspace}/files/complete`
-- `GET /files/{node}/download`
-- `GET /files/{node}/versions`
+
+### Upload
+`POST /api/v1/workspaces/{workspaceSlug}/files`
+
+`multipart/form-data`:
+- `file` required
+- `parent_id` optional folder UUID
+
+The endpoint checks workspace membership and quota, uploads bytes to bunny.net Storage and returns a unified `file` node. Text extraction is asynchronous.
+
+### File metadata
+`GET /api/v1/files/{nodeId}`
+
+Returns the file node, current version, MIME type, size and extraction status.
+
+### Download
+`GET /api/v1/files/{nodeId}/download`
+
+Authenticated API-proxied download.
 
 ## Search
-- `GET /workspaces/{workspace}/search?q=`
+`GET /api/v1/workspaces/{workspaceSlug}/search?q=vacation`
 
-Search response shape:
-```json
-{
-  "query": "contract",
-  "results": [
-    {"node_id":"...","type":"document","name":"Contract Policy","snippet":"..."},
-    {"node_id":"...","type":"file","name":"contract.pdf","snippet":"..."}
-  ]
-}
-```
+Searches folder/file names plus document text and extracted file text. Uses Meilisearch when its workspace filter is configured and healthy; otherwise safely falls back to PostgreSQL.

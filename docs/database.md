@@ -29,7 +29,7 @@
 `node_id`, `current_version_id`, `mime_type`, `size_bytes`
 
 ### file_versions
-`id`, `node_id`, `version`, `object_key`, `mime_type`, `size_bytes`, `sha256`, `extracted_text`, `created_by`, `created_at`
+`id`, `node_id`, `version`, `object_key`, `mime_type`, `size_bytes`, `sha256`, `extracted_text`, `extraction_status`, `extraction_error`, `created_by`, `created_at`
 
 ### permissions
 `id`, `workspace_id`, `node_id`, `subject_type`, `subject_id`, `permission`
