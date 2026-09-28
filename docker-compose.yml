@@ -35,15 +35,15 @@ services:
     environment:
       APP_KEY: base64:LOCAL_DEVELOPMENT_REPLACE_ME_32_BYTES_KEY=
     ports: ["8080:8080"]
-    depends_on: [postgres, redis]
+    depends_on: [postgres, redis, meilisearch]
 
   worker:
     build: ./apps/api
     env_file: ./apps/api/.env.example
     environment:
       APP_KEY: base64:LOCAL_DEVELOPMENT_REPLACE_ME_32_BYTES_KEY=
-    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--timeout=90"]
-    depends_on: [postgres, redis]
+    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--timeout=300"]
+    depends_on: [postgres, redis, meilisearch]
 
   web:
     build:

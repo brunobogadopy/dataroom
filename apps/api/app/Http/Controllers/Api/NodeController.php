@@ -7,6 +7,7 @@ use App\Models\Node;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Services\SearchIndex;
 
 class NodeController extends Controller
 {
@@ -19,7 +20,7 @@ class NodeController extends Controller
     {
         $this->assertMember($request, $workspace);
         $parentId = $request->query('parent_id');
-        return $workspace->nodes()->where('parent_id', $parentId)->orderByRaw("case type when 'folder' then 0 when 'document' then 1 else 2 end")->orderBy('name')->get();
+        return $workspace->nodes()->where('parent_id', $parentId)->with(['file.currentVersion'])->orderByRaw("case type when 'folder' then 0 when 'document' then 1 else 2 end")->orderBy('name')->get();
     }
 
     public function storeFolder(Request $request, Workspace $workspace)
@@ -35,10 +36,11 @@ class NodeController extends Controller
         return response()->json($node, 201);
     }
 
-    public function destroy(Request $request, Node $node)
+    public function destroy(Request $request, Node $node, SearchIndex $index)
     {
         abort_unless($node->workspace->members()->whereKey($request->user()->id)->exists(), 403);
         $node->delete();
+        $index->deleteNode($node->id);
         return response()->noContent();
     }
 }

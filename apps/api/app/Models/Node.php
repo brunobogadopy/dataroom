@@ -16,4 +16,5 @@ class Node extends Model
     public function parent() { return $this->belongsTo(Node::class, 'parent_id'); }
     public function children() { return $this->hasMany(Node::class, 'parent_id'); }
     public function document() { return $this->hasOne(Document::class); }
+    public function file() { return $this->hasOne(StoredFile::class, 'node_id'); }
 }
