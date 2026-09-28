@@ -1,73 +1,54 @@
-# Dataroom v0.3
+# Dataroom v0.4
 
 Company knowledge + file storage built around one core idea: **folders, documents and files live in the same tree**.
 
-## Stack
-- Laravel 13 / PHP 8.4 API
-- Next.js 16 web app
-- Tiptap 3 rich-text editor
+## v0.4: multi-user access
+Dataroom now adds a real workspace authorization layer on top of the v0.3 editor/navigation experience.
+
+### Workspace roles
+- **Owner** — full control; cannot be removed or demoted.
+- **Admin** — manages members, invitations and restricted content.
+- **Member** — can create and edit workspace content they can access.
+- **Viewer** — read-only access.
+
+### Invitations
+Owners/admins can create a 7-day invitation tied to an email address. The API returns a one-time invitation URL token; the recipient logs in with that email and accepts the invitation.
+
+Email delivery itself is not wired yet; v0.4 exposes a copyable invite link so the authorization workflow is usable before transactional email is added.
+
+### Restricted nodes
+Any folder, document or file can be switched from **workspace** to **restricted** visibility by an owner/admin.
+
+Restricted grants:
+- Can view
+- Can edit
+
+Restrictions inherit down the tree. A user must satisfy every restricted ancestor in the path, so a child grant cannot bypass a protected parent folder.
+
+### Permission-aware operations
+Authorization is enforced server-side for:
+- browsing and breadcrumbs
+- document read/write
+- folder/document creation
+- file upload
+- file preview/download
+- node deletion
+- search results
+
+Meilisearch results are permission-filtered before returning to the client, with the PostgreSQL fallback using the same access checks.
+
+## Existing stack
+- Laravel 13 / PHP 8.4
+- Next.js 16 + Tiptap 3
 - PostgreSQL
-- Redis queues/cache
-- Meilisearch with PostgreSQL fallback
-- bunny.net Storage for customer file bytes
+- Redis
+- Meilisearch
+- bunny.net Storage
 
-## v0.3 product flow
-1. Register / login and enter a workspace.
-2. Browse the unified content tree.
-3. Open folders and navigate through breadcrumb paths.
-4. Create a document inside the current folder.
-5. Write rich text with headings, bold/italic, lists, quotes and undo/redo.
-6. Changes autosave back to Laravel and are re-indexed for search.
-7. Upload files into the current folder.
-8. Open supported files in an authenticated preview view.
-9. Search and jump directly into a folder, document or file.
-
-## File previews
-Inline preview currently supports:
-- PDF
-- images
-- text MIME types
-
-DOCX and other unsupported browser formats still show metadata, extracted text when available, and a Download action.
-
-## Security
-The bunny.net Storage Zone `AccessKey` remains server-side only. Browser previews and downloads go through authenticated API endpoints in v0.3.
-
-## Local boot
+## Upgrade
 
 ```bash
-cd apps/api
-composer install
-cp .env.example .env
-php artisan key:generate
-cd ../..
-
-cd apps/web
-npm install
-cd ../..
-
-docker compose up --build -d
 docker compose exec api php artisan migrate
 ```
 
-Set `BUNNY_STORAGE_ZONE` and `BUNNY_STORAGE_ACCESS_KEY` before testing file upload/preview.
-
-Open http://localhost:3000.
-
-## GitHub Container Registry
-`.github/workflows/images.yml` publishes:
-- `ghcr.io/<owner>/<repo>-api:latest`
-- `ghcr.io/<owner>/<repo>-web:latest`
-
-Configure repository variable `NEXT_PUBLIC_API_URL` before the web image build.
-
-## Magic Containers
-Recommended first deployment remains a single-region application with:
-- `web` → port 3000
-- `api` → port 8080
-- `worker` → same API image with queue worker command
-- PostgreSQL + persistent volume
-- Redis
-- Meilisearch + persistent volume
-
-Customer file bytes live in bunny.net Storage, not container volumes.
+No new infrastructure service is required for v0.4.
