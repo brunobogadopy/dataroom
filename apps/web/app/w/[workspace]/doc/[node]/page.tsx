@@ -6,6 +6,7 @@ import {useRouter} from 'next/navigation';
 import {EditorContent,useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {api} from '@/lib/api';
+import CommentsPanel from '@/components/CommentsPanel';
 
 type DocumentNode={id:string;parent_id:string|null;name:string;can_edit:boolean;document:{content_json:Record<string,unknown>;plain_text:string;version:number;status:string}};
 type Revision={id:string;version:number;plain_text:string;created_at:string;creator?:{name:string}|null};
@@ -29,12 +30,13 @@ export default function DocumentPage({params}:{params:Promise<{workspace:string;
   if(!record)return <div className="shell">{saveState==='error'?'Unable to load document.':'Loading…'}</div>;
 
   return <div className="grid">
-    <aside className="sidebar stack"><h2>Dataroom</h2><Link href={record.parent_id?`/w/${workspace}/browse?folder=${record.parent_id}`:`/w/${workspace}/browse`}>← Browse</Link><Link href={`/w/${workspace}/library`}>Library</Link><Link href={`/w/${workspace}/search`}>Search</Link></aside>
+    <aside className="sidebar stack"><h2>Dataroom</h2><Link href={record.parent_id?`/w/${workspace}/browse?folder=${record.parent_id}`:`/w/${workspace}/browse`}>← Browse</Link><Link href={`/w/${workspace}/library`}>Library</Link><Link href="/notifications">Notifications</Link><Link href={`/w/${workspace}/search`}>Search</Link></aside>
     <main className="documentMain">
       <div className="documentTopbar"><button className="linkButton" onClick={()=>router.back()}>← Back</button><div className="row"><button className="linkButton" onClick={loadHistory}>History</button><span className={`saveState ${saveState}`}>{record.can_edit?(saveState==='saving'?'Saving…':saveState==='error'?'Save failed':`Saved · v${record.document.version}`):'Read only'}</span></div></div>
       <input className="documentTitle" value={title} onChange={e=>setTitle(e.target.value)} onBlur={saveTitle} disabled={!record.can_edit} aria-label="Document title"/>
       {record.can_edit&&<div className="editorToolbar"><button className={editor?.isActive('bold')?'active':''} onClick={()=>editor?.chain().focus().toggleBold().run()}><b>B</b></button><button className={editor?.isActive('italic')?'active':''} onClick={()=>editor?.chain().focus().toggleItalic().run()}><i>I</i></button><button className={editor?.isActive('heading',{level:2})?'active':''} onClick={()=>editor?.chain().focus().toggleHeading({level:2}).run()}>H2</button><button className={editor?.isActive('bulletList')?'active':''} onClick={()=>editor?.chain().focus().toggleBulletList().run()}>• List</button><button className={editor?.isActive('orderedList')?'active':''} onClick={()=>editor?.chain().focus().toggleOrderedList().run()}>1. List</button><button onClick={()=>editor?.chain().focus().undo().run()}>Undo</button><button onClick={()=>editor?.chain().focus().redo().run()}>Redo</button></div>}
       <EditorContent editor={editor}/>
+      <CommentsPanel nodeId={node}/>
     </main>
     {showHistory&&<aside className="historyPanel"><div className="topbar"><h3>Version history</h3><button className="linkButton" onClick={()=>setShowHistory(false)}>Close</button></div>{history.map(h=><div className="historyItem" key={h.id}><b>Version {h.version}</b><span className="muted">{new Date(h.created_at).toLocaleString()} · {h.creator?.name??'Unknown'}</span><p>{h.plain_text.slice(0,140)||'Empty document'}</p>{record.can_edit&&<button className="btn secondary" onClick={()=>restore(h.id)}>Restore</button>}</div>)}</aside>}
   </div>;
