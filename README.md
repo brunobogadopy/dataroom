@@ -1,54 +1,41 @@
-# Dataroom v0.4
+# Dataroom v0.5
 
 Company knowledge + file storage built around one core idea: **folders, documents and files live in the same tree**.
 
-## v0.4: multi-user access
-Dataroom now adds a real workspace authorization layer on top of the v0.3 editor/navigation experience.
+## v0.5: history, recovery and daily workflow
 
-### Workspace roles
-- **Owner** — full control; cannot be removed or demoted.
-- **Admin** — manages members, invitations and restricted content.
-- **Member** — can create and edit workspace content they can access.
-- **Viewer** — read-only access.
+### Document history
+Every content save stores the previous document body as an immutable revision. Users with edit access can open version history and restore an older revision without losing the current state.
 
-### Invitations
-Owners/admins can create a 7-day invitation tied to an email address. The API returns a one-time invitation URL token; the recipient logs in with that email and accepts the invitation.
+### File versions
+Existing files can receive new versions without changing their node identity or permissions. Every version keeps its own object key, checksum, MIME type, size and extraction status.
 
-Email delivery itself is not wired yet; v0.4 exposes a copyable invite link so the authorization workflow is usable before transactional email is added.
+### Library
+Each workspace now exposes:
+- **Favorites** — personal starred nodes
+- **Recent** — recently opened folders, documents and files
+- **Trash** — recoverable soft-deleted nodes
+- **Activity** — workspace actions, permission-filtered for non-admin users
 
-### Restricted nodes
-Any folder, document or file can be switched from **workspace** to **restricted** visibility by an owner/admin.
+### Trash
+Editable content can be moved to trash. Restoring requires the parent folder to exist. Permanent deletion is limited to owners/admins, refuses non-empty folders, and removes stored file objects from bunny.net Storage.
 
-Restricted grants:
-- Can view
-- Can edit
+### Read-only UX
+The API now returns per-node edit capability so viewers and view-only grants do not see editing/version-upload controls that would fail server authorization.
 
-Restrictions inherit down the tree. A user must satisfy every restricted ancestor in the path, so a child grant cannot bypass a protected parent folder.
-
-### Permission-aware operations
-Authorization is enforced server-side for:
-- browsing and breadcrumbs
-- document read/write
-- folder/document creation
-- file upload
-- file preview/download
-- node deletion
-- search results
-
-Meilisearch results are permission-filtered before returning to the client, with the PostgreSQL fallback using the same access checks.
-
-## Existing stack
-- Laravel 13 / PHP 8.4
-- Next.js 16 + Tiptap 3
-- PostgreSQL
-- Redis
-- Meilisearch
-- bunny.net Storage
+## CI
+Pull requests to `main` now run:
+- Composer validation + install
+- PHP syntax checks
+- Laravel route boot check
+- npm install
+- TypeScript validation
+- Next.js production build
 
 ## Upgrade
 
 ```bash
-docker compose exec api php artisan migrate
+php artisan migrate --force
 ```
 
-No new infrastructure service is required for v0.4.
+No additional infrastructure service is required for v0.5.
