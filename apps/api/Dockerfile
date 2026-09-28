@@ -3,13 +3,16 @@ WORKDIR /app
 COPY composer.json ./
 RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts
 COPY . .
-RUN composer dump-autoload --optimize --no-dev
+RUN mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
+    && composer dump-autoload --optimize --no-dev
 
 FROM php:8.4-cli-alpine
-RUN apk add --no-cache libpq-dev icu-dev oniguruma-dev linux-headers libzip-dev poppler-utils \
+RUN apk add --no-cache libpq icu-libs oniguruma libzip poppler-utils \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS libpq-dev icu-dev oniguruma-dev linux-headers libzip-dev \
     && docker-php-ext-install pdo_pgsql intl pcntl zip \
     && pecl install redis \
-    && docker-php-ext-enable redis
+    && docker-php-ext-enable redis \
+    && apk del .build-deps
 RUN printf 'upload_max_filesize=100M\npost_max_size=105M\nmemory_limit=256M\n' > /usr/local/etc/php/conf.d/dataroom.ini
 WORKDIR /app
 COPY --from=vendor /app /app

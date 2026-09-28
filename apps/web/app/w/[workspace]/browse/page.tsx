@@ -23,7 +23,7 @@ export default function Browse({params}:{params:Promise<{workspace:string}>}){
       ]);
       setWs(workspaceData);setNodes(items);
       setCrumbs(folderId?await api<Crumb[]>(`/workspaces/${workspace}/folders/${folderId}/breadcrumbs`):[]);
-    }catch(e){setError(String(e))}
+    }catch(e){setError(e instanceof Error?e.message:'Something went wrong.')}
   }
   useEffect(()=>{load()},[workspace,folderId]);
 
@@ -40,7 +40,7 @@ export default function Browse({params}:{params:Promise<{workspace:string}>}){
   }
   async function send(file:File){
     setError('');setProgress(0);
-    try{await uploadFile(`/workspaces/${workspace}/files`,file,folderId,setProgress);await load()}catch(e){setError(String(e))}
+    try{await uploadFile(`/workspaces/${workspace}/files`,file,folderId,setProgress);await load()}catch(e){setError(e instanceof Error?e.message:'Something went wrong.')}
     finally{setProgress(null);if(input.current)input.current.value=''}
   }
   function drop(e:DragEvent){e.preventDefault();if(!canWrite)return;const file=e.dataTransfer.files?.[0];if(file)send(file)}
